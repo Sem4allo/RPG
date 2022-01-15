@@ -119,9 +119,11 @@ contract Player is Character, Weapon, Armor, Shop {
             player_score -= armor_shop[_id].product_armor_cost;
             armor_name = armor_shop[_id].product_armor_name;
             wear_counter = 0;
+            
 
+            // Заглушка (потом поменяю) =========================================================================================================
             emit Player_buying(msg.sender, armor_shop[_id].product_armor_name, armor_shop[_id].product_armor_cost);
-
+            //===================================================================================================================================
             if (keccak256(abi.encodePacked(armor_shop[_id].product_armor_name)) == keccak256(abi.encodePacked("Shaverma"))){
                 armor_shop.pop();
             }
