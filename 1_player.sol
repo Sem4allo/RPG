@@ -5,10 +5,11 @@ import "./2_character.sol";
 import "./3_weapon.sol";
 import "./4_armor.sol";
 import "./5_shop.sol";
+import "./6_token.sol";
+import "./7_dungeon.sol";
 
-contract Player is Character, Weapon, Armor, Shop {
+contract Player is Character, Weapon, Armor, Shop, Token {
     uint8 public player_level;
-    uint16 public player_score;
 
     modifier onlyOwner(address _adr){
         require(_adr == owner_address);
@@ -25,7 +26,9 @@ contract Player is Character, Weapon, Armor, Shop {
         weapon_damage = 69;
         armor_points = 1000;
         player_level = 1;
-        player_score = 65535;
+        balances[msg.sender] = 65535;
+
+        is_in_dungeon = false;
 
     }
 
@@ -35,33 +38,49 @@ contract Player is Character, Weapon, Armor, Shop {
 
         require(health_point > 0, "You are dead");
             require(Player(enemy_address).health_point() > 0, "The player is dead");
+            require(Player(enemy_address).is_in_dungeon() == false, "The player in dungeon");
 
                 Player enemy = Player(enemy_address);
-
-                if (enemy.armor_points() >= weapon_damage * 20 / 100){
-                    enemy.Character_setHealth(weapon_damage * 80 / 100);
-                    enemy.Armor_setPoints(weapon_damage * 20 / 100);
-                } else {
-                    enemy.Character_setHealth(weapon_damage);
-                }
 
                 emit Player_battle(msg.sender, enemy_address, weapon_damage, health_point);
 
                 if (enemy.health_point() == 0){
                     player_level += 1;
-                    player_score += 10;
+                    balances[msg.sender] += 10;
 
-                    emit Player_victory(msg.sender, enemy_address, player_level, player_score);
+                    emit Player_victory(msg.sender, enemy_address, player_level, balances[msg.sender]);
                 }                
+    }
+
+    function Player_go_to_the_dungeon() public {
+        require(health_point > 0, "You are dead");
+            is_in_dungeon = true;
+            if (current_monster.monster_health_points <= 0){
+                balances[msg.sender] += 10;
+            }
+
+            monster_attack(weapon_damage);
+
+            if (armor_points >= current_monster.monster_damage * 20 / 100){
+                Character_setHealth(current_monster.monster_damage * 80 / 100);
+                Armor_setPoints(current_monster.monster_damage * 20 / 100);
+            } else {
+                Character_setHealth(current_monster.monster_damage);
+            }
+  
+    }
+
+    function Player_leave_dungeon() public {
+        is_in_dungeon = false;
     }
 
     // Лечение
 
     function Player_cure() public onlyOwner(msg.sender){
-        require(player_score > 0, "Not enough score");
+        require(balances[msg.sender] > 0, "Not enough score");
 
-            health_point += 20;
-            player_score -= 3;
+            health_point += 50;
+            balances[msg.sender] -= 3;
 
             emit Player_healing(msg.sender, health_point);
     }
@@ -69,13 +88,13 @@ contract Player is Character, Weapon, Armor, Shop {
     // Прокачка оружия
 
     function Player_improveAttack() public onlyOwner(msg.sender){
-        require(player_score > 0, "Not enough score");
+        require(balances[msg.sender] > 0, "Not enough score");
         require(weapon_upgr_counter < 5, "Max upgrade");
         require(keccak256(abi.encodePacked(weapon_name)) != keccak256(abi.encodePacked("Shaverma")), "YOU GOT SHAVERMA!!!!!!!!");
 
             weapon_damage += 2;
             weapon_upgr_counter++;
-            player_score -= 5;
+            balances[msg.sender] -= 5;
 
             emit Player_smithing(msg.sender, weapon_damage);
     }
@@ -83,12 +102,12 @@ contract Player is Character, Weapon, Armor, Shop {
     // Починка брони
 
     function Player_armorFix() public onlyOwner(msg.sender){
-        require(player_score > 0, "Not enough score");
+        require(balances[msg.sender] > 0, "Not enough score");
         require(wear_counter < 5, "Can not be fixed");
 
             armor_points = max_armor_points;
             wear_counter++;
-            player_score -= 15;
+            balances[msg.sender] -= 15;
 
             emit Player_smithing(msg.sender, weapon_damage);
     }
@@ -96,11 +115,13 @@ contract Player is Character, Weapon, Armor, Shop {
     // Покупка оружия
 
     function Player_buy_weapon(uint8 _id) public onlyOwner(msg.sender){
-        require(player_score >= weapon_shop[_id].product_weapon_cost, "Not enough score");
+        require(balances[msg.sender] >= weapon_shop[_id].product_weapon_cost, "Not enough score");
+
             weapon_damage = weapon_shop[_id].product_weapon_damage;
-            player_score -= weapon_shop[_id].product_weapon_cost;
             weapon_name = weapon_shop[_id].product_weapon_name;
             weapon_upgr_counter = 0;
+
+            balances[msg.sender] -= weapon_shop[_id].product_weapon_cost;
 
             emit Player_buying(msg.sender, weapon_shop[_id].product_weapon_name, weapon_shop[_id].product_weapon_cost);
 
@@ -113,20 +134,17 @@ contract Player is Character, Weapon, Armor, Shop {
     // Покупка брони
 
     function Player_buy_armor(uint8 _id) public onlyOwner(msg.sender){
-        require(player_score >= armor_shop[_id].product_armor_cost, "Not enough score");
+        require(balances[msg.sender] >= armor_shop[_id].product_armor_cost, "Not enough score");
+
             armor_points = armor_shop[_id].product_armor_points;
             max_armor_points = armor_shop[_id].product_armor_points;
-            player_score -= armor_shop[_id].product_armor_cost;
+
+            balances[msg.sender] -= armor_shop[_id].product_armor_cost;
             armor_name = armor_shop[_id].product_armor_name;
+
             wear_counter = 0;
             
-
-            // Заглушка (потом поменяю) =========================================================================================================
             emit Player_buying(msg.sender, armor_shop[_id].product_armor_name, armor_shop[_id].product_armor_cost);
-            //===================================================================================================================================
-            if (keccak256(abi.encodePacked(armor_shop[_id].product_armor_name)) == keccak256(abi.encodePacked("Shaverma"))){
-                armor_shop.pop();
-            }
 
     }
 }

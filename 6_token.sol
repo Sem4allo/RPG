@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: GPL-3.0
 pragma solidity >=0.8.7;
 
-contract MyTokenContract{
+contract Token{
 
-    address owner_address;
+    address owner;
     
     string constant name = "REN";
     string constant symbol = "R";
@@ -16,22 +16,21 @@ contract MyTokenContract{
 
 
     constructor(){
-        owner_address = msg.sender;
+        owner = msg.sender;
     }
 
-    modifier onlyOwner(address _adr){
-        require(_adr == owner_address);
+    modifier onlyOwner_(address _adr){
+        require(_adr == owner);
         _;
     }
 
     event Transfer(address _from, address _to, uint _value);		
 	event Approval(address _from, address _spender, uint _value);
 
-    function mint(address taker, uint256 _value) public onlyOwner(msg.sender){
+    function mint(address taker, uint256 _value) public onlyOwner_(msg.sender){
         totalSupply += _value;
         balances[taker] += _value;
     }
-
 
     function balanceOf(address _owner) public view returns (uint balance) {
 		return balances[_owner];

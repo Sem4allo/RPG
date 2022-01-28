@@ -7,7 +7,7 @@ contract Armor {
     uint16 public max_armor_points;
     uint8 public wear_counter;
 
-    function Armor_setPoints(uint16 damage) external {
+    function Armor_setPoints(uint16 damage) public {
         armor_points -= damage;
     }
 }
