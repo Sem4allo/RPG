@@ -6,9 +6,9 @@ contract Dungeon {
     bool public is_in_dungeon;
 
     struct Dungeon_monsters {
-        uint8 id;
         uint16 monster_damage;
         uint16 monster_health_points;
+        uint8 id;
     }
 
     Dungeon_monsters[] private monsters;
