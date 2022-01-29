@@ -4,17 +4,17 @@ pragma solidity >= 0.8.7;
 contract Shop {
 
     struct Product_weapon {
-        uint8 id;
         string product_weapon_name;
         uint16 product_weapon_damage;
         uint16 product_weapon_cost;
+        uint8 id;
     }
 
     struct Product_armor {
-        uint8 id;
         string product_armor_name;
         uint16 product_armor_points;
         uint16 product_armor_cost;
+        uint8 id;
     }
 
     Product_weapon[] public weapon_shop;
